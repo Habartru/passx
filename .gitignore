@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# React
+node_modules/
+/frontend/build/
+/frontend/.pnp
+/frontend/.pnp.js
+/frontend/coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.windsurf/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# User data (not for repo)
+/backend/records/
+/pdf/
+
+# Temporary/test files
+/output/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+debug_*
+temp_*
+*_filled*.xml
+
+# Tunnel configs
+ngrok.yml
+PUBLIC_URLS.txt
+tunnel_*.log
+
+# Old/legacy code
+/web/
