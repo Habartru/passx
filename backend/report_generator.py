@@ -95,7 +95,48 @@ def generate_passport_report(passport_data):
             if visa.get('mrz_line1') or visa.get('mrz_line2'):
                 p.add_run("\n" + (visa.get('mrz_line1') or "") + "\n" + (visa.get('mrz_line2') or ""))
 
-    # --- Stamps ---
+    # --- Registration Stamps (RVP/VNZ/Registration) ---
+    reg_stamps = passport_data.get('registration_stamps') or []
+    if not isinstance(reg_stamps, list):
+        reg_stamps = []
+    reg_stamps = [s for s in reg_stamps if s and isinstance(s, dict)]
+    reg_stamps.sort(key=lambda x: x.get('page_number') if isinstance(x.get('page_number'), int) else 999)
+    
+    if reg_stamps:
+        for reg_stamp in reg_stamps:
+            page_num = reg_stamp.get('page_number')
+            stamp_type = reg_stamp.get('stamp_type', '')
+            
+            # Determine header based on stamp type
+            type_label = {
+                'RVP': 'РВП (Разрешение на временное проживание)',
+                'VNZ': 'ВНЖ (Вид на жительство)',
+                'REGISTRATION': 'Регистрация по месту пребывания',
+                'RESIDENCE_PERMIT': 'Вид на жительство',
+                'OTHER': 'Штамп'
+            }.get(stamp_type, 'Штамп')
+            
+            page_header = f"[Стр. {page_num}: {type_label}]" if page_num else f"[{type_label}]"
+            document.add_paragraph("\n" + page_header)
+            
+            p = document.add_paragraph()
+            p.paragraph_format.line_spacing = 1.2
+            
+            p.add_run(f"{type_label.upper()}\n").bold = True
+            if reg_stamp.get('country'):
+                p.add_run(f"СТРАНА: {reg_stamp.get('country', '')}\n")
+            if reg_stamp.get('issue_date'):
+                p.add_run(f"ДАТА ВЫДАЧИ: {reg_stamp.get('issue_date', '')}\n")
+            if reg_stamp.get('expiry_date'):
+                p.add_run(f"ДЕЙСТВИТЕЛЬНО ДО: {reg_stamp.get('expiry_date', '')}\n")
+            if reg_stamp.get('authority'):
+                p.add_run(f"ОРГАН ВЫДАЧИ: {reg_stamp.get('authority', '')}\n")
+            if reg_stamp.get('address'):
+                p.add_run(f"АДРЕС РЕГИСТРАЦИИ: {reg_stamp.get('address', '')}\n")
+            if reg_stamp.get('remarks'):
+                p.add_run(f"ПРИМЕЧАНИЯ: {reg_stamp.get('remarks', '')}\n")
+
+    # --- Stamps (Border crossing) ---
     stamps = passport_data.get('stamps') or []
     if not isinstance(stamps, list):
         stamps = []
@@ -109,8 +150,8 @@ def generate_passport_report(passport_data):
             country = stamp.get('country', '')
             date = stamp.get('date', '')
             st_type = stamp.get('type', '')
-            # Format: "Штамп: [Страна] [Дата] [Тип]"
-            p.add_run(f"Штамп: {country} {date} {st_type}\n")
+            type_ru = {'entry': 'въезд', 'exit': 'выезд', 'transit': 'транзит'}.get(st_type, st_type)
+            p.add_run(f"Штамп: {country} {date} ({type_ru})\n")
 
     document.add_paragraph("\n")
     

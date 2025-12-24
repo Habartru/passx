@@ -485,7 +485,7 @@ def delete_passport_record(record_id: int) -> bool:
         session.close()
 
 PROMPT = """Analyze this passport document and extract ALL information in structured JSON format.
-CRITICAL: Pay special attention to VISA stickers, RESIDENCE PERMITS, and STAMPS.
+CRITICAL: Pay special attention to VISA stickers, RESIDENCE PERMITS, REGISTRATION STAMPS, and BORDER STAMPS.
 
 Extract the following data:
 1. BIOGRAPHICAL PAGE:
@@ -504,32 +504,59 @@ Extract the following data:
    - mrz_line2: string (second line of MRZ)
 
 3. VISAS (array):
-   Extract all VISAS, RESIDENCE PERMITS, and WORK PERMITS.
-   For each item found:
+   Extract ONLY actual VISA STICKERS (colorful stickers with photo, MRZ, hologram).
+   DO NOT include registration stamps, RVP stamps, VNZ stamps here!
+   For each VISA found:
    - page_number: integer (page that contains the visa)
-   - country: string (Issuing country. For Residence Permits, it's the host country)
-   - visa_type: string (e.g. "VISA", "RESIDENCE PERMIT", "WORK PERMIT")
-   - visa_subtype: string (Look for "CATEGORY", "TYPE", or codes like "D", "C", "Tier 4")
+   - country: string (Issuing country)
+   - visa_type: string (e.g. "VISA", "WORK PERMIT")
+   - visa_subtype: string (Look for "CATEGORY", "TYPE", or codes like "D", "C", "Tier 4", "М", "ОУ")
    - visa_number: string (Look for distinct red or black numbers, often top right)
    - place_of_issue: string (City or Authority code, e.g. "MOSCOW", "07")
    - issue_date: string (DD.MM.YYYY preferred)
    - expiry_date: string (DD.MM.YYYY preferred)
-   - entries_allowed: string (Look for "ENTRIES", "01", "02", "MULT". IF RESIDENCE PERMIT AND NOT FOUND -> RETURN "MULTIPLE")
-   - stay_duration: string (Look for "DAYS", "XX DAYS". IF RESIDENCE PERMIT AND NOT FOUND -> RETURN "UNTIL EXPIRY")
+   - entries_allowed: string (Look for "ENTRIES", "01", "02", "MULT")
+   - stay_duration: string (Look for "DAYS", "XX DAYS")
    - remarks: string (Extract ANY additional text notes, observations, or annotations)
    - mrz_line1: string (Look for machine readable lines at bottom of sticker if present)
    - mrz_line2: string (second MRZ line if present)
    - full_text: string (REQUIRED: Complete OCR text of the sticker area)
 
-4. STAMPS (array):
+4. REGISTRATION_STAMPS (array):
+   Extract all RVP (РВП), VNZ (ВНЖ), RESIDENCE PERMITS, and REGISTRATION stamps.
+   These are typically rectangular stamps (not stickers!) with text about temporary residence, 
+   permanent residence, or migration registration. They may contain:
+   - "РАЗРЕШЕНО ВРЕМЕННОЕ ПРОЖИВАНИЕ" (RVP - Temporary Residence Permit)
+   - "ВИД НА ЖИТЕЛЬСТВО" or "ВНЖ" (VNZ - Residence Permit)
+   - "РЕГИСТРАЦИЯ" or "МИГРАЦИОННЫЙ УЧЕТ" (Registration/Migration registration)
+   - "ЗАРЕГИСТРИРОВАН" (Registered)
+   - Address information
+   For each registration stamp found:
+   - page_number: integer
+   - stamp_type: string (one of: "RVP", "VNZ", "REGISTRATION", "RESIDENCE_PERMIT", "OTHER")
+   - country: string (usually "RUSSIA" for these stamps)
+   - issue_date: string (DD.MM.YYYY)
+   - expiry_date: string (DD.MM.YYYY, if applicable)
+   - authority: string (issuing authority, e.g. "УФМС", "МВД", "ОВМ")
+   - address: string (registration address if present)
+   - remarks: string (any additional text)
+   - full_text: string (Complete OCR text of the stamp)
+
+5. STAMPS (array):
+   Extract ONLY border crossing stamps (entry/exit stamps at airports, borders).
+   DO NOT include RVP/VNZ/registration stamps here!
    - page_number: integer (page that contains the stamp)
    - country: string
    - date: string (DD.MM.YYYY)
-   - type: string (entry/exit)
+   - type: string (entry/exit/transit)
 
 IMPORTANT: 
 - All fields must be strings or numbers (not nested objects or arrays)
 - full_name should be a single string with all language variants separated by " / "
+- CLEARLY DISTINGUISH between:
+  * VISAS = colorful stickers with photos and MRZ
+  * REGISTRATION_STAMPS = rectangular stamps about residence/registration (РВП, ВНЖ, регистрация)
+  * STAMPS = simple border crossing stamps (въезд/выезд)
 - Return ONLY valid JSON without markdown code blocks
 
 Structure:
@@ -537,6 +564,7 @@ Structure:
   "biographical_page": {...},
   "mrz": {...},
   "visas": [...],
+  "registration_stamps": [...],
   "stamps": [...]
 }
 """
@@ -791,6 +819,11 @@ def process_passport():
                 passport_data['stamps'] = normalize_list_of_dicts(passport_data['stamps'])
             else:
                 passport_data['stamps'] = []
+
+            if 'registration_stamps' in passport_data:
+                passport_data['registration_stamps'] = normalize_list_of_dicts(passport_data['registration_stamps'])
+            else:
+                passport_data['registration_stamps'] = []
             
             # Pages images not included in JSON to save space
 
@@ -920,6 +953,7 @@ def passport_detail(record_id: int):
 
     cleaned['visas'] = normalize_list_of_dicts(cleaned.get('visas', []))
     cleaned['stamps'] = normalize_list_of_dicts(cleaned.get('stamps', []))
+    cleaned['registration_stamps'] = normalize_list_of_dicts(cleaned.get('registration_stamps', []))
 
     session = SessionLocal()
     try:

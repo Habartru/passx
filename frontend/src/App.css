@@ -405,6 +405,11 @@ body {
   margin-bottom: 1rem;
 }
 
+.registration-stamp-card {
+  border-left: 4px solid #10b981;
+  background: linear-gradient(to right, #f0fdf4, white);
+}
+
 .visa-card-header {
   display: flex;
   justify-content: space-between;

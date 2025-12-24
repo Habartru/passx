@@ -1272,12 +1272,88 @@ function App() {
                         </div>
                       )}
 
+                      {editableData.registration_stamps && editableData.registration_stamps.length > 0 && (
+                        <div className="section">
+                          <div className="section-heading">
+                            <h2>Штампы РВП/ВНЖ/Регистрации</h2>
+                            <p className="section-subtitle">Разрешения на проживание и регистрация</p>
+                          </div>
+                          {editableData.registration_stamps.map((regStamp, index) => (
+                            <div key={index} className="visa-card registration-stamp-card">
+                              <div className="visa-card-header">
+                                <div className="visa-card-title">
+                                  <Stamp size={16} />
+                                  <span>
+                                    {regStamp.stamp_type === 'RVP' ? 'РВП' : 
+                                     regStamp.stamp_type === 'VNZ' ? 'ВНЖ' : 
+                                     regStamp.stamp_type === 'REGISTRATION' ? 'Регистрация' :
+                                     regStamp.stamp_type === 'RESIDENCE_PERMIT' ? 'Вид на жительство' :
+                                     'Штамп'} {index + 1}
+                                  </span>
+                                  {regStamp.page_number && (
+                                    <span className="visa-page-tag">Стр. {regStamp.page_number}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="visa-card-body">
+                                <EditableSelect
+                                  label="Тип штампа"
+                                  value={regStamp.stamp_type || ''}
+                                  onChange={(val) => handleFieldChange(['registration_stamps', index, 'stamp_type'], val)}
+                                  options={[
+                                    { value: 'RVP', label: 'РВП (Разрешение на временное проживание)' },
+                                    { value: 'VNZ', label: 'ВНЖ (Вид на жительство)' },
+                                    { value: 'REGISTRATION', label: 'Регистрация / Миграционный учёт' },
+                                    { value: 'RESIDENCE_PERMIT', label: 'Вид на жительство (другое)' },
+                                    { value: 'OTHER', label: 'Другое' }
+                                  ]}
+                                />
+                                <EditableInput
+                                  label="Страна"
+                                  value={regStamp.country || ''}
+                                  onChange={(val) => handleFieldChange(['registration_stamps', index, 'country'], val)}
+                                />
+                                <EditableInput
+                                  label="Дата выдачи"
+                                  value={regStamp.issue_date || ''}
+                                  onChange={(val) => handleFieldChange(['registration_stamps', index, 'issue_date'], val)}
+                                />
+                                <EditableInput
+                                  label="Дата окончания"
+                                  value={regStamp.expiry_date || ''}
+                                  onChange={(val) => handleFieldChange(['registration_stamps', index, 'expiry_date'], val)}
+                                />
+                                <EditableInput
+                                  label="Орган выдачи"
+                                  value={regStamp.authority || ''}
+                                  onChange={(val) => handleFieldChange(['registration_stamps', index, 'authority'], val)}
+                                  fullWidth
+                                />
+                                <EditableInput
+                                  label="Адрес регистрации"
+                                  value={regStamp.address || ''}
+                                  onChange={(val) => handleFieldChange(['registration_stamps', index, 'address'], val)}
+                                  fullWidth
+                                />
+                                <EditableInput
+                                  label="Примечания"
+                                  value={regStamp.remarks || ''}
+                                  onChange={(val) => handleFieldChange(['registration_stamps', index, 'remarks'], val)}
+                                  multiline
+                                  fullWidth
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {editableData.stamps && editableData.stamps.length > 0 && (
                         <div className="section card card--form">
                           <div className="card-header">
                             <div>
-                              <p className="card-eyebrow">Отметки</p>
-                              <h2>Штампы</h2>
+                              <p className="card-eyebrow">Пограничные отметки</p>
+                              <h2>Штампы въезда/выезда</h2>
                             </div>
                           </div>
                           <div className="card-body">
